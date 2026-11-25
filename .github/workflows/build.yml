@@ -1,0 +1,41 @@
+name: Build Weather widget
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Allow old pods to build with a modern Xcode
+        run: |
+          cat >> Podfile <<'PODEOF'
+
+          post_install do |installer|
+            installer.pods_project.targets.each do |t|
+              t.build_configurations.each do |c|
+                c.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
+              end
+            end
+          end
+          PODEOF
+
+      - name: Install dependencies
+        run: pod install
+
+      - name: Build the widget
+        run: |
+          xcodebuild -workspace Weather.xcworkspace -scheme Weather -configuration Release -derivedDataPath build ARCHS="x86_64 arm64" ONLY_ACTIVE_ARCH=NO CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="-" DEVELOPMENT_TEAM="" build
+
+      - name: Zip the widget
+        run: |
+          cd build/Build/Products/Release
+          ditto -c -k --keepParent Weather.pock Weather.pock.zip
+
+      - name: Save the result
+        uses: actions/upload-artifact@v4
+        with:
+          name: Weather-pock
+          path: build/Build/Products/Release/Weather.pock.zip
