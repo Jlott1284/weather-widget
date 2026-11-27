@@ -58,6 +58,7 @@ internal class WeatherService {
         let session = URLSession.shared.dataTask(with: request) { [result] data, response, error in
             print("[WeatherService]: \((response as? HTTPURLResponse)?.statusCode ?? -999)")
             guard error == nil, let data = data else {
+                print("[WeatherService]: Request failed: \(String(describing: error))")
                 let name: String = Preferences[.city_name]
                 let data = WeatherData(
                     metadata: .init(error: nil, code: -999),
